@@ -1,6 +1,15 @@
 import { RecordingListItem, RecordingDetail, ApiError } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+function getApiBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!envUrl) {
+    return "http://localhost:8000/api";
+  }
+  const clean = envUrl.trim().replace(/\/+$/, "");
+  return clean.endsWith("/api") ? clean : `${clean}/api`;
+}
+
+const API_BASE_URL = getApiBaseUrl();
 const CLIENT_ID_KEY = "audio_notes_client_id";
 
 export class ApiClientError extends Error {

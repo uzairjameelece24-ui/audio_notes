@@ -72,13 +72,14 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
 
 
-# --- Routers ---
+# --- Routers (mounted under both /api and root for full client URL compatibility) ---
 app.include_router(health.router, prefix="/api")
 app.include_router(uploads.router, prefix="/api")
 app.include_router(recordings.router, prefix="/api")
 
-# Mount root health check for load balancer compatibility
 app.include_router(health.router, prefix="")
+app.include_router(uploads.router, prefix="")
+app.include_router(recordings.router, prefix="")
 
 
 @app.get("/")
