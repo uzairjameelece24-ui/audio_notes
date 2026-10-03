@@ -1,0 +1,33 @@
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env*.local
+
+# Python / Virtual Environment
+backend/.venv/
+.venv/
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+backend/.pytest_cache/
+.pytest_cache/
+
+# Environment Variables & Secrets
+*.env
+!.env.example
+frontend/.env
+backend/.env
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo

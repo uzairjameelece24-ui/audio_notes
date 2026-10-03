@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: audio_notes_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: audio_notes
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d audio_notes"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  s3:
+    image: adobe/s3mock:latest
+    container_name: audio_notes_s3
+    environment:
+      initialBuckets: audio-notes
+      retainFilesOnExit: "true"
+    ports:
+      - "9090:9090"
+    volumes:
+      - s3_data:/root/.s3mock
+
+volumes:
+  postgres_data:
+  s3_data:
