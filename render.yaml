@@ -1,7 +1,7 @@
 databases:
   - name: audio-notes-db
     databaseName: audio_notes
-    user: postgres
+    user: audionotes
     plan: free
 
 services:
