@@ -1,5 +1,7 @@
 # Audio Notes
 
+**Live Demo:** [https://audio-notes-lilac.vercel.app](https://audio-notes-lilac.vercel.app)
+
 A full-stack app that transcribes audio recordings of any duration using Gnani's Speech-to-Text API and generates structured summaries using Groq (Qwen 2.5 27B).
 
 Built with Next.js, FastAPI, PostgreSQL, and an S3-compatible bucket.
@@ -15,7 +17,7 @@ Built with Next.js, FastAPI, PostgreSQL, and an S3-compatible bucket.
 5. **Summarization**: Stitched transcripts are sent to Groq (`qwen/qwen3.8-27b`) with JSON mode for structured output (TL;DR, key points, action items). Transcripts over 12,000 characters automatically use map-reduce.
 6. **Live UI**: The Next.js frontend polls the recording endpoint every 3 seconds, showing a 6-stage pipeline stepper, elapsed time, and real-time chunk progress.
 
-A complete technical breakdown is available inside the running app at `/architecture`.
+A complete technical breakdown is available at [https://audio-notes-lilac.vercel.app/architecture](https://audio-notes-lilac.vercel.app/architecture).
 
 ---
 
@@ -90,7 +92,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [https://audio-notes-lilac.vercel.app](https://audio-notes-lilac.vercel.app) in your browser (or `http://localhost:3000` when running locally).
 
 ---
 
@@ -141,7 +143,7 @@ This application runs completely on **Render** (Backend + PostgreSQL Database) a
 
 ## Architecture & System Design
 
-Navigate to [http://localhost:3000/architecture](http://localhost:3000/architecture) for:
+Navigate to [https://audio-notes-lilac.vercel.app/architecture](https://audio-notes-lilac.vercel.app/architecture) for:
 - System components & hosting boundaries
 - Step-by-step pipeline flow from upload to summary
 - Where files live (S3, local ephemeral disk, Postgres)
