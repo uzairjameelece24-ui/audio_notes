@@ -17,6 +17,16 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql+psycopg://postgres:postgrespassword@localhost:5432/audio_notes"
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+psycopg://", 1)
+            elif v.startswith("postgresql://") and not v.startswith("postgresql+psycopg://"):
+                return v.replace("postgresql://", "postgresql+psycopg://", 1)
+        return v
+
     # Storage (S3-compatible: MinIO / S3Mock / Cloudflare R2 / Supabase Storage)
     S3_ENDPOINT_URL: Optional[str] = "http://localhost:9090"
     S3_PUBLIC_ENDPOINT_URL: Optional[str] = None  # If browser needs different host (e.g. localhost)

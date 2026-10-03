@@ -21,5 +21,5 @@ COPY . .
 ENV PORT=8000
 EXPOSE 8000
 
-# Default command runs database migrations then starts FastAPI with Uvicorn
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Default command runs database migrations, starts worker in background, then starts FastAPI with Uvicorn
+CMD ["sh", "-c", "alembic upgrade head && (python -m app.worker &) && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
