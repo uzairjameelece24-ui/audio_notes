@@ -1,16 +1,16 @@
-FROM python:3.12-slim
+# Multi-stage build: copy static ffmpeg & ffprobe directly (zero apt-get dependencies, 100% reliable)
+FROM mwader/static-ffmpeg:6.1 AS ffmpeg-source
 
-# Install system dependencies including ffmpeg for audio chunking and normalization
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    curl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.12-slim-bookworm
+
+# Copy static ffmpeg and ffprobe binaries
+COPY --from=ffmpeg-source /ffmpeg /usr/local/bin/ffmpeg
+COPY --from=ffmpeg-source /ffprobe /usr/local/bin/ffprobe
 
 WORKDIR /app
 
 # Install python dependencies
-COPY requirements.txt .
+COPY requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
