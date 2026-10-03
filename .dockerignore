@@ -1,0 +1,8 @@
+frontend/
+sample_audio/
+.git
+.github
+.venv
+__pycache__
+*.pyc
+*.md
