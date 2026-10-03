@@ -137,3 +137,25 @@ def test_upload_lifecycle_init_and_complete():
     # Verify deleted
     get_after_del = client.get(f"/api/recordings/{rec_id}", headers={"X-Client-Id": TEST_CLIENT_ID})
     assert get_after_del.status_code == 404
+
+
+def test_local_storage_raw_upload(tmp_path):
+    from app.services.storage import LocalStorageService
+    local_service = LocalStorageService(storage_dir=str(tmp_path))
+    
+    with patch("app.routers.uploads.storage_service", local_service):
+        key = "recordings/test-client/test-file.wav"
+        audio_content = b"RIFF....WAVEfmt test data"
+        res = client.put(f"/api/uploads/raw/{key}", content=audio_content)
+        assert res.status_code == 200
+        assert res.json()["status"] == "ok"
+        
+        # Verify head and download
+        head = local_service.head_object(key)
+        assert head is not None
+        assert head["ContentLength"] == len(audio_content)
+        
+        dest = str(tmp_path / "downloaded.wav")
+        assert local_service.download_file(key, dest)
+        with open(dest, "rb") as f:
+            assert f.read() == audio_content

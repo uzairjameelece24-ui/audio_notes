@@ -27,12 +27,14 @@ class Settings(BaseSettings):
                 return v.replace("postgresql://", "postgresql+psycopg://", 1)
         return v
 
-    # Storage (S3-compatible: MinIO / S3Mock / Cloudflare R2 / Supabase Storage)
-    S3_ENDPOINT_URL: Optional[str] = "http://localhost:9090"
+    # Storage configuration
+    STORAGE_BACKEND: str = "auto"  # "auto", "s3", or "local"
+    STORAGE_DIR: str = "/tmp/audio_notes_storage"
+    S3_ENDPOINT_URL: Optional[str] = None
     S3_PUBLIC_ENDPOINT_URL: Optional[str] = None  # If browser needs different host (e.g. localhost)
     S3_BUCKET_NAME: str = "audio-notes"
-    AWS_ACCESS_KEY_ID: str = "test"
-    AWS_SECRET_ACCESS_KEY: str = "test"
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_REGION: str = "us-east-1"
     PRESIGNED_URL_EXPIRES_IN: int = 3600  # 1 hour
 

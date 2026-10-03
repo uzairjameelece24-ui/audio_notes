@@ -3,7 +3,8 @@ import re
 import uuid
 import logging
 from typing import Optional
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -17,7 +18,7 @@ from app.schemas import (
     ErrorResponse,
     ErrorDetail
 )
-from app.services.storage import storage_service
+from app.services.storage import storage_service, LocalStorageService
 from app.services.queue import enqueue_job
 
 logger = logging.getLogger(__name__)
@@ -188,3 +189,32 @@ def complete_upload(
         recording_id=recording.id,
         message="Upload completed successfully. Processing job queued."
     )
+
+
+@router.put("/raw/{key:path}")
+async def upload_raw_file(key: str, request: Request):
+    """
+    Direct binary upload endpoint when using LocalStorageService (Zero AWS).
+    Accepts raw audio streaming directly into the local storage folder.
+    """
+    if not isinstance(storage_service, LocalStorageService):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": {"code": "S3_ONLY", "message": "Storage is configured for S3 presigned URLs."}}
+        )
+
+    # Sanitize and resolve path to prevent directory traversal
+    base_dir = storage_service.storage_dir
+    target_path = os.path.abspath(os.path.join(base_dir, key))
+    if not target_path.startswith(base_dir):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": {"code": "INVALID_PATH", "message": "Invalid storage path."}}
+        )
+
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+    with open(target_path, "wb") as f:
+        async for chunk in request.stream():
+            f.write(chunk)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "ok", "message": "File written to storage."})

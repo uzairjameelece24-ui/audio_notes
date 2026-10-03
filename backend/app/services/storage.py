@@ -1,4 +1,5 @@
 import os
+import shutil
 import logging
 from typing import Optional, Dict, Any
 from urllib.parse import urlparse, urlunparse
@@ -10,7 +11,66 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
-class StorageService:
+class LocalStorageService:
+    """
+    Local filesystem storage provider for zero-AWS / zero-cloud deployments.
+    Stores audio files directly on disk (e.g. on Render container or persistent volume).
+    """
+    def __init__(self, storage_dir: Optional[str] = None):
+        base_dir = storage_dir or settings.STORAGE_DIR
+        try:
+            os.makedirs(base_dir, exist_ok=True)
+            self.storage_dir = os.path.abspath(base_dir)
+        except Exception:
+            # Fallback to relative local_storage if directory creation fails
+            self.storage_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../local_storage"))
+            os.makedirs(self.storage_dir, exist_ok=True)
+        logger.info(f"LocalStorageService initialized at {self.storage_dir}")
+
+    def generate_presigned_upload_url(self, key: str, content_type: str) -> str:
+        """
+        Returns an API endpoint URL for direct binary PUT uploads.
+        If S3_PUBLIC_ENDPOINT_URL is set, uses it as base; otherwise returns relative path.
+        """
+        if settings.S3_PUBLIC_ENDPOINT_URL:
+            base = settings.S3_PUBLIC_ENDPOINT_URL.rstrip("/")
+            return f"{base}/api/uploads/raw/{key}"
+        return f"/api/uploads/raw/{key}"
+
+    def head_object(self, key: str) -> Optional[Dict[str, Any]]:
+        path = os.path.join(self.storage_dir, key)
+        if os.path.exists(path) and os.path.isfile(path):
+            return {"ContentLength": os.path.getsize(path)}
+        return None
+
+    def download_file(self, key: str, local_path: str) -> bool:
+        src = os.path.join(self.storage_dir, key)
+        if not os.path.exists(src):
+            logger.error(f"Local storage file not found: {src}")
+            return False
+        if os.path.abspath(src) == os.path.abspath(local_path):
+            return True
+        try:
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            shutil.copyfile(src, local_path)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to copy local file from {src} to {local_path}: {e}")
+            return False
+
+    def delete_object(self, key: str) -> bool:
+        path = os.path.join(self.storage_dir, key)
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                return True
+            except OSError as e:
+                logger.warning(f"Failed to remove local file {path}: {e}")
+                return False
+        return True
+
+
+class S3StorageService:
     def __init__(self):
         # Configure standard S3 client with signature version s3v4
         session = boto3.session.Session()
@@ -125,5 +185,42 @@ class StorageService:
             return False
 
 
+def get_storage_service():
+    """
+    Factory resolving storage service based on configuration:
+    - 'local': Uses local filesystem storage (zero AWS)
+    - 's3': Uses S3-compatible bucket
+    - 'auto': Uses S3 if real AWS credentials or custom S3 endpoint provided, otherwise falls back to local
+    """
+    mode = settings.STORAGE_BACKEND.lower()
+    if mode == "local":
+        return LocalStorageService()
+
+    if mode == "s3":
+        try:
+            return S3StorageService()
+        except Exception as e:
+            logger.warning(f"Could not initialize S3 storage ({e}), falling back to LocalStorageService")
+            return LocalStorageService()
+
+    # auto mode:
+    if settings.AWS_ACCESS_KEY_ID and settings.AWS_ACCESS_KEY_ID not in ["", "test"]:
+        try:
+            return S3StorageService()
+        except Exception as e:
+            logger.warning(f"Could not initialize S3 storage ({e}), falling back to LocalStorageService")
+            return LocalStorageService()
+
+    if settings.S3_ENDPOINT_URL and settings.S3_ENDPOINT_URL.strip():
+        try:
+            return S3StorageService()
+        except Exception as e:
+            logger.warning(f"Could not initialize S3 storage ({e}), falling back to LocalStorageService")
+            return LocalStorageService()
+
+    # Default to LocalStorageService (Zero AWS)
+    return LocalStorageService()
+
+
 # Global singleton instance
-storage_service = StorageService()
+storage_service = get_storage_service()

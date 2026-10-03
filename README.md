@@ -113,6 +113,32 @@ pytest
 
 ---
 
+## Deployment (Zero AWS: Render + Vercel)
+
+This application runs completely on **Render** (Backend + PostgreSQL Database) and **Vercel** (Frontend) without needing any AWS account or S3 bucket.
+
+### 1. Deploy Backend on Render (1-Click Blueprint)
+1. Go to your [Render Dashboard](https://dashboard.render.com/) and click **New +** &rarr; **Blueprint**.
+2. Connect your GitHub repository (`uzairjameelece24-ui/audio_notes`).
+3. Render reads `render.yaml` and automatically configures:
+   - **PostgreSQL Database** (`audio-notes-db`, Free tier)
+   - **Docker Web Service** (`audio-notes-backend`, Free tier) with FFmpeg pre-installed
+4. Enter your two API keys when prompted:
+   - `GNANI_API_KEY`: your Gnani STT token
+   - `GROQ_API_KEY`: your Groq API token
+5. Click **Apply**. Once deployed, copy your backend URL (e.g. `https://audio-notes-backend.onrender.com`).
+
+### 2. Deploy Frontend on Vercel
+1. Go to [Vercel](https://vercel.com/) and click **Add New...** &rarr; **Project**.
+2. Select your `audio_notes` repository.
+3. Set **Root Directory** to `frontend`.
+4. Under **Environment Variables**, add:
+   - `NEXT_PUBLIC_API_URL` = `https://<YOUR-RENDER-BACKEND-URL>/api`
+   - `NEXT_PUBLIC_GITHUB_URL` = `https://github.com/uzairjameelece24-ui/audio_notes`
+5. Click **Deploy**.
+
+---
+
 ## Architecture & System Design
 
 Navigate to [http://localhost:3000/architecture](http://localhost:3000/architecture) for:

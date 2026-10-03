@@ -140,11 +140,17 @@ export async function uploadAudioFile({
   const initData = await initRes.json();
   const { recording_id, upload_url } = initData;
 
-  // Step 2: Direct PUT to Presigned S3 URL via XMLHttpRequest for true progress
+  // Step 2: Direct PUT to storage endpoint (S3 presigned URL or direct local storage)
   onStageChange?.("uploading");
+  let targetUrl = upload_url;
+  if (targetUrl.startsWith("/")) {
+    const baseHost = API_BASE_URL.replace(/\/api\/?$/, "");
+    targetUrl = `${baseHost}${targetUrl}`;
+  }
+
   await new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("PUT", upload_url, true);
+    xhr.open("PUT", targetUrl, true);
     xhr.setRequestHeader("Content-Type", file.type || "audio/wav");
 
     if (signal) {
